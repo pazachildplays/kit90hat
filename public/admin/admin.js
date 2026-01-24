@@ -146,6 +146,7 @@ function displayLinks() {
                     <div class="link-url">${link.url}</div>
                 </div>
                 <div class="link-actions">
+                    <button class="btn-primary" onclick="showEditLinkForm(${link.id})" style="background:#4CAF50;">✏️ Edit</button>
                     <button class="btn-danger" onclick="deleteLink(${link.id})">🗑️ Delete</button>
                 </div>
             `;
@@ -253,6 +254,89 @@ async function saveNewLink() {
     }
 }
 
+// Edit link functionality
+let currentEditingLinkId = null;
+
+function showEditLinkForm(linkId) {
+    const link = currentConfig.links.find(l => l.id === linkId);
+    if (!link) return;
+    
+    currentEditingLinkId = linkId;
+    document.getElementById('editLinkName').value = link.name;
+    document.getElementById('editLinkUrl').value = link.url;
+    document.getElementById('editLinkIconFile').value = '';
+    
+    // Display current icon
+    if (link.icon && link.icon.startsWith('data:image')) {
+        document.getElementById('editIconPreview').innerHTML = `<img src="${link.icon}" alt="icon preview" style="width:100%;height:100%;object-fit:contain;">`;
+    } else {
+        document.getElementById('editIconPreview').innerHTML = 'Current icon';
+    }
+    
+    document.getElementById('edit-link-form').classList.remove('hidden');
+    document.getElementById('add-link-form').classList.add('hidden');
+}
+
+function cancelEditLink() {
+    document.getElementById('edit-link-form').classList.add('hidden');
+    document.getElementById('editLinkName').value = '';
+    document.getElementById('editLinkUrl').value = '';
+    document.getElementById('editLinkIconFile').value = '';
+    document.getElementById('editIconPreview').innerHTML = '';
+    currentEditingLinkId = null;
+}
+
+async function saveEditLink() {
+    const name = document.getElementById('editLinkName').value;
+    const url = document.getElementById('editLinkUrl').value;
+    const iconFileInput = document.getElementById('editLinkIconFile');
+
+    if (!name || !url) {
+        alert('Please fill in all fields');
+        return;
+    }
+
+    const linkIndex = currentConfig.links.findIndex(l => l.id === currentEditingLinkId);
+    if (linkIndex === -1) return;
+
+    // Update name and URL
+    currentConfig.links[linkIndex].name = name;
+    currentConfig.links[linkIndex].url = url;
+
+    // Update icon if a new file was uploaded
+    if (iconFileInput.files.length > 0) {
+        const file = iconFileInput.files[0];
+        const newIcon = await new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = (e) => resolve(e.target.result);
+            reader.readAsDataURL(file);
+        });
+        currentConfig.links[linkIndex].icon = newIcon;
+    }
+
+    try {
+        const response = await fetch('/api/admin/links', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                password: adminPassword,
+                links: currentConfig.links
+            })
+        });
+
+        const data = await response.json();
+        if (data.success) {
+            cancelEditLink();
+            displayLinks();
+        }
+    } catch (error) {
+        console.error('Error updating link:', error);
+        alert('Failed to update link');
+    }
+}
+
 async function deleteLink(id) {
     if (!confirm('Are you sure you want to delete this link?')) {
         return;
@@ -298,6 +382,7 @@ function displayContacts() {
                     <div class="contact-value">${contact.value}</div>
                 </div>
                 <div class="contact-actions">
+                    <button class="btn-primary" onclick="showEditContactForm(${contact.id})" style="background:#4CAF50;">✏️ Edit</button>
                     <button class="btn-danger" onclick="deleteContact(${contact.id})">🗑️ Delete</button>
                 </div>
             `;
@@ -359,6 +444,71 @@ async function saveNewContact() {
     } catch (error) {
         console.error('Error saving contact:', error);
         alert('Failed to save contact');
+    }
+}
+
+// Edit contact functionality
+let currentEditingContactId = null;
+
+function showEditContactForm(contactId) {
+    const contact = currentConfig.contacts.find(c => c.id === contactId);
+    if (!contact) return;
+    
+    currentEditingContactId = contactId;
+    document.getElementById('editContactLabel').value = contact.label;
+    document.getElementById('editContactValue').value = contact.value;
+    document.getElementById('editContactIcon').value = contact.icon;
+    
+    document.getElementById('edit-contact-form').classList.remove('hidden');
+    document.getElementById('add-contact-form').classList.add('hidden');
+}
+
+function cancelEditContact() {
+    document.getElementById('edit-contact-form').classList.add('hidden');
+    document.getElementById('editContactLabel').value = '';
+    document.getElementById('editContactValue').value = '';
+    document.getElementById('editContactIcon').value = '📧';
+    currentEditingContactId = null;
+}
+
+async function saveEditContact() {
+    const label = document.getElementById('editContactLabel').value;
+    const value = document.getElementById('editContactValue').value;
+    const icon = document.getElementById('editContactIcon').value;
+
+    if (!label || !value) {
+        alert('Please fill in all fields');
+        return;
+    }
+
+    const contactIndex = currentConfig.contacts.findIndex(c => c.id === currentEditingContactId);
+    if (contactIndex === -1) return;
+
+    currentConfig.contacts[contactIndex].label = label;
+    currentConfig.contacts[contactIndex].value = value;
+    currentConfig.contacts[contactIndex].icon = icon;
+
+    try {
+        const response = await fetch('/api/admin/update', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                password: adminPassword,
+                updates: { contacts: currentConfig.contacts }
+            })
+        });
+
+        const data = await response.json();
+        if (data.success) {
+            currentConfig = data.config;
+            cancelEditContact();
+            displayContacts();
+        }
+    } catch (error) {
+        console.error('Error updating contact:', error);
+        alert('Failed to update contact');
     }
 }
 

@@ -134,18 +134,23 @@ function displayLinks() {
             const linkItem = document.createElement('div');
             linkItem.className = 'link-item';
             
-            // Determine if icon is an image (base64) or emoji
-            const isImage = link.icon && link.icon.startsWith('data:image');
-            const iconHTML = isImage 
-                ? `<img src="${link.icon}" alt="icon" style="width:30px;height:30px;object-fit:contain;">`
-                : link.icon;
+            // Always expect image format for icons
+            const iconHTML = link.icon && link.icon.startsWith('data:image')
+                ? `<img src="${link.icon}" alt="icon" style="width:40px;height:40px;object-fit:contain;">`
+                : `<div style="width:40px;height:40px;background:#ccc;display:flex;align-items:center;justify-content:center;">No Icon</div>`;
             
             linkItem.innerHTML = `
                 <div class="link-info">
-                    <div class="link-name">${iconHTML} ${link.name}</div>
-                    <div class="link-url">${link.url}</div>
+                    <div style="display:flex;align-items:center;gap:10px;">
+                        ${iconHTML}
+                        <div>
+                            <div class="link-name">${link.name}</div>
+                            <div class="link-url">${link.url}</div>
+                        </div>
+                    </div>
                 </div>
                 <div class="link-actions">
+                    <button class="btn-primary" onclick="showEditLinkForm(${link.id})" style="background:#4CAF50;">✏️ Edit</button>
                     <button class="btn-danger" onclick="deleteLink(${link.id})">🗑️ Delete</button>
                 </div>
             `;
@@ -163,16 +168,17 @@ function cancelAddLink() {
     document.getElementById('add-link-form').classList.add('hidden');
     document.getElementById('linkName').value = '';
     document.getElementById('linkUrl').value = '';
-    document.getElementById('linkIcon').value = '🔗';
     document.getElementById('linkIconFile').value = '';
-    document.getElementById('iconPreview').innerHTML = '🔗';
+    document.getElementById('iconPreview').innerHTML = 'No image selected';
 }
 
 // Handle icon file upload preview
 document.addEventListener('DOMContentLoaded', function() {
     const iconFileInput = document.getElementById('linkIconFile');
     const iconPreview = document.getElementById('iconPreview');
-    const iconTextInput = document.getElementById('linkIcon');
+    
+    const editIconFileInput = document.getElementById('editLinkIconFile');
+    const editIconPreview = document.getElementById('editIconPreview');
     
     if (iconFileInput) {
         iconFileInput.addEventListener('change', function(e) {
@@ -180,17 +186,22 @@ document.addEventListener('DOMContentLoaded', function() {
             if (file) {
                 const reader = new FileReader();
                 reader.onload = function(event) {
-                    iconPreview.innerHTML = `<img src="${event.target.result}" alt="icon preview">`;
+                    iconPreview.innerHTML = `<img src="${event.target.result}" alt="icon preview" style="width:100%;height:100%;object-fit:contain;">`;
                 };
                 reader.readAsDataURL(file);
             }
         });
     }
     
-    if (iconTextInput) {
-        iconTextInput.addEventListener('change', function() {
-            if (!document.getElementById('linkIconFile').value) {
-                iconPreview.innerHTML = this.value || '🔗';
+    if (editIconFileInput) {
+        editIconFileInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    editIconPreview.innerHTML = `<img src="${event.target.result}" alt="icon preview" style="width:100%;height:100%;object-fit:contain;">`;
+                };
+                reader.readAsDataURL(file);
             }
         });
     }
@@ -200,24 +211,24 @@ async function saveNewLink() {
     const name = document.getElementById('linkName').value;
     const url = document.getElementById('linkUrl').value;
     const iconFileInput = document.getElementById('linkIconFile');
-    const iconTextInput = document.getElementById('linkIcon').value;
 
     if (!name || !url) {
         alert('Please fill in all fields');
         return;
     }
 
-    let icon = iconTextInput || '🔗';
-    
-    // If file is uploaded, convert to base64
-    if (iconFileInput.files.length > 0) {
-        const file = iconFileInput.files[0];
-        icon = await new Promise((resolve) => {
-            const reader = new FileReader();
-            reader.onload = (e) => resolve(e.target.result);
-            reader.readAsDataURL(file);
-        });
+    if (iconFileInput.files.length === 0) {
+        alert('Please upload an icon image');
+        return;
     }
+
+    // Convert file to base64
+    const file = iconFileInput.files[0];
+    const icon = await new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (e) => resolve(e.target.result);
+        reader.readAsDataURL(file);
+    });
 
     const newLink = {
         id: Date.now(),
@@ -283,6 +294,89 @@ async function deleteLink(id) {
     }
 }
 
+// Edit link functionality
+let currentEditingLinkId = null;
+
+function showEditLinkForm(linkId) {
+    const link = currentConfig.links.find(l => l.id === linkId);
+    if (!link) return;
+    
+    currentEditingLinkId = linkId;
+    document.getElementById('editLinkName').value = link.name;
+    document.getElementById('editLinkUrl').value = link.url;
+    document.getElementById('editLinkIconFile').value = '';
+    
+    // Display current icon
+    if (link.icon && link.icon.startsWith('data:image')) {
+        document.getElementById('editIconPreview').innerHTML = `<img src="${link.icon}" alt="icon preview" style="width:100%;height:100%;object-fit:contain;">`;
+    } else {
+        document.getElementById('editIconPreview').innerHTML = 'Current icon';
+    }
+    
+    document.getElementById('edit-link-form').classList.remove('hidden');
+    document.getElementById('add-link-form').classList.add('hidden');
+}
+
+function cancelEditLink() {
+    document.getElementById('edit-link-form').classList.add('hidden');
+    document.getElementById('editLinkName').value = '';
+    document.getElementById('editLinkUrl').value = '';
+    document.getElementById('editLinkIconFile').value = '';
+    document.getElementById('editIconPreview').innerHTML = '';
+    currentEditingLinkId = null;
+}
+
+async function saveEditLink() {
+    const name = document.getElementById('editLinkName').value;
+    const url = document.getElementById('editLinkUrl').value;
+    const iconFileInput = document.getElementById('editLinkIconFile');
+
+    if (!name || !url) {
+        alert('Please fill in all fields');
+        return;
+    }
+
+    const linkIndex = currentConfig.links.findIndex(l => l.id === currentEditingLinkId);
+    if (linkIndex === -1) return;
+
+    // Update name and URL
+    currentConfig.links[linkIndex].name = name;
+    currentConfig.links[linkIndex].url = url;
+
+    // Update icon if a new file was uploaded
+    if (iconFileInput.files.length > 0) {
+        const file = iconFileInput.files[0];
+        const newIcon = await new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = (e) => resolve(e.target.result);
+            reader.readAsDataURL(file);
+        });
+        currentConfig.links[linkIndex].icon = newIcon;
+    }
+
+    try {
+        const response = await fetch('/api/admin/links', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                password: adminPassword,
+                links: currentConfig.links
+            })
+        });
+
+        const data = await response.json();
+        if (data.success) {
+            cancelEditLink();
+            displayLinks();
+        }
+    } catch (error) {
+        console.error('Error updating link:', error);
+        alert('Failed to update link');
+    }
+}
+
 // Contact management
 function displayContacts() {
     const contactsList = document.getElementById('contacts-list');
@@ -298,6 +392,7 @@ function displayContacts() {
                     <div class="contact-value">${contact.value}</div>
                 </div>
                 <div class="contact-actions">
+                    <button class="btn-primary" onclick="showEditContactForm(${contact.id})" style="background:#4CAF50;">✏️ Edit</button>
                     <button class="btn-danger" onclick="deleteContact(${contact.id})">🗑️ Delete</button>
                 </div>
             `;
@@ -359,6 +454,71 @@ async function saveNewContact() {
     } catch (error) {
         console.error('Error saving contact:', error);
         alert('Failed to save contact');
+    }
+}
+
+// Edit contact functionality
+let currentEditingContactId = null;
+
+function showEditContactForm(contactId) {
+    const contact = currentConfig.contacts.find(c => c.id === contactId);
+    if (!contact) return;
+    
+    currentEditingContactId = contactId;
+    document.getElementById('editContactLabel').value = contact.label;
+    document.getElementById('editContactValue').value = contact.value;
+    document.getElementById('editContactIcon').value = contact.icon;
+    
+    document.getElementById('edit-contact-form').classList.remove('hidden');
+    document.getElementById('add-contact-form').classList.add('hidden');
+}
+
+function cancelEditContact() {
+    document.getElementById('edit-contact-form').classList.add('hidden');
+    document.getElementById('editContactLabel').value = '';
+    document.getElementById('editContactValue').value = '';
+    document.getElementById('editContactIcon').value = '📧';
+    currentEditingContactId = null;
+}
+
+async function saveEditContact() {
+    const label = document.getElementById('editContactLabel').value;
+    const value = document.getElementById('editContactValue').value;
+    const icon = document.getElementById('editContactIcon').value;
+
+    if (!label || !value) {
+        alert('Please fill in all fields');
+        return;
+    }
+
+    const contactIndex = currentConfig.contacts.findIndex(c => c.id === currentEditingContactId);
+    if (contactIndex === -1) return;
+
+    currentConfig.contacts[contactIndex].label = label;
+    currentConfig.contacts[contactIndex].value = value;
+    currentConfig.contacts[contactIndex].icon = icon;
+
+    try {
+        const response = await fetch('/api/admin/update', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                password: adminPassword,
+                updates: { contacts: currentConfig.contacts }
+            })
+        });
+
+        const data = await response.json();
+        if (data.success) {
+            currentConfig = data.config;
+            cancelEditContact();
+            displayContacts();
+        }
+    } catch (error) {
+        console.error('Error updating contact:', error);
+        alert('Failed to update contact');
     }
 }
 

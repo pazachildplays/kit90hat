@@ -37,11 +37,11 @@ async function loadConfig() {
                 linkBox.target = '_blank';
                 linkBox.className = 'link-box';
                 
-                // Check if icon is an image (base64) or emoji
+                // Check if icon is an image (base64)
                 const isImage = link.icon && link.icon.startsWith('data:image');
                 const iconHTML = isImage 
                     ? `<img src="${link.icon}" alt="icon" class="icon-img">` 
-                    : `<span class="icon">${link.icon || '🔗'}</span>`;
+                    : `<div style="width:50px;height:50px;background:#ccc;display:flex;align-items:center;justify-content:center;">No Icon</div>`;
                 
                 linkBox.innerHTML = `
                     ${iconHTML}
@@ -74,6 +74,31 @@ async function loadConfig() {
     } catch (error) {
         console.error('Error loading config:', error);
     }
+}
+
+// Bubble creation on click
+document.addEventListener('click', (e) => {
+    createBubble(e.clientX, e.clientY);
+});
+
+function createBubble(x, y) {
+    const bubble = document.createElement('div');
+    bubble.className = 'bubble';
+    
+    const size = Math.random() * 40 + 20; // 20-60px
+    const offsetX = (Math.random() - 0.5) * 100; // -50 to 50
+    
+    bubble.style.left = x + 'px';
+    bubble.style.top = y + 'px';
+    bubble.style.width = size + 'px';
+    bubble.style.height = size + 'px';
+    bubble.style.setProperty('--tx', offsetX + 'px');
+    
+    const bubbleContainer = document.getElementById('bubble-container');
+    bubbleContainer.appendChild(bubble);
+    
+    // Remove bubble after animation completes
+    setTimeout(() => bubble.remove(), 4000);
 }
 
 // Poll for config changes every 2 seconds

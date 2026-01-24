@@ -100,6 +100,21 @@
                         <button onclick="cancelAddLink()" class="btn-secondary">Cancel</button>
                     </div>
                 </div>
+
+                <div id="edit-link-form" class="form-section hidden">
+                    <h4>Edit Link</h4>
+                    <input type="text" id="editLinkName" placeholder="Link Name (e.g., youtube)" class="form-input">
+                    <input type="text" id="editLinkUrl" placeholder="URL (e.g., https://...)" class="form-input">
+                    <div class="icon-upload-section">
+                        <label>Update Icon Image (leave empty to keep current):</label>
+                        <input type="file" id="editLinkIconFile" accept="image/*" class="form-input">
+                        <div id="editIconPreview" class="icon-preview"></div>
+                    </div>
+                    <div class="form-buttons">
+                        <button onclick="saveEditLink()" class="btn-primary">Save Changes</button>
+                        <button onclick="cancelEditLink()" class="btn-secondary">Cancel</button>
+                    </div>
+                </div>
             </div>
 
             <!-- Settings Tab -->
@@ -186,6 +201,17 @@
                     <div class="form-buttons">
                         <button onclick="saveNewContact()" class="btn-primary">Save Contact</button>
                         <button onclick="cancelAddContact()" class="btn-secondary">Cancel</button>
+                    </div>
+                </div>
+
+                <div id="edit-contact-form" class="form-section hidden">
+                    <h4>Edit Contact</h4>
+                    <input type="text" id="editContactLabel" placeholder="Label (e.g., Email, Phone)" class="form-input">
+                    <input type="text" id="editContactValue" placeholder="Value (e.g., contact@example.com)" class="form-input">
+                    <input type="text" id="editContactIcon" placeholder="Icon (emoji or text)" class="form-input" value="📧">
+                    <div class="form-buttons">
+                        <button onclick="saveEditContact()" class="btn-primary">Save Changes</button>
+                        <button onclick="cancelEditContact()" class="btn-secondary">Cancel</button>
                     </div>
                 </div>
             </div>

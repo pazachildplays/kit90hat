@@ -105,9 +105,61 @@ app.post('/api/admin/commissions', (req, res) => {
   }
 });
 
+// Leaderboard endpoints
+app.post('/api/admin/leaderboard', (req, res) => {
+  const { game, playerName, score } = req.body;
+  
+  if (!game || !playerName || score === undefined) {
+    return res.status(400).json({ error: 'Missing parameters' });
+  }
+  
+  const config = getConfig();
+  config.leaderboards = config.leaderboards || {};
+  config.leaderboards[game] = config.leaderboards[game] || [];
+  
+  // Check if player already exists
+  const existingIndex = config.leaderboards[game].findIndex(e => e.playerName === playerName);
+  
+  if (existingIndex >= 0) {
+    // Update if new score is higher
+    if (score > config.leaderboards[game][existingIndex].score) {
+      config.leaderboards[game][existingIndex].score = score;
+    }
+  } else {
+    // Add new entry
+    config.leaderboards[game].push({ playerName, score });
+  }
+  
+  // Sort by score descending
+  config.leaderboards[game].sort((a, b) => b.score - a.score);
+  
+  if (saveConfig(config)) {
+    res.json({ success: true });
+  } else {
+    res.status(500).json({ error: 'Failed to save leaderboard' });
+  }
+});
+
+app.get('/api/leaderboard', (req, res) => {
+  const game = req.query.game;
+  
+  if (!game) {
+    return res.status(400).json({ error: 'Missing game parameter' });
+  }
+  
+  const config = getConfig();
+  const leaderboard = config.leaderboards?.[game] || [];
+  
+  res.json(leaderboard);
+});
+
 // Serve public pages
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, '../public/index.html'));
+});
+
+app.get('/games', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/games.html'));
 });
 
 app.get('/admin', (req, res) => {
@@ -117,5 +169,6 @@ app.get('/admin', (req, res) => {
 app.listen(PORT, () => {
   console.log(`KitKat Universe server running on http://localhost:${PORT}`);
   console.log(`Public page: http://localhost:${PORT}`);
+  console.log(`Games: http://localhost:${PORT}/games`);
   console.log(`Admin panel: http://localhost:${PORT}/admin`);
 });

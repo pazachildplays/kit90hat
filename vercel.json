@@ -28,6 +28,18 @@
       "dest": "/api/admin/links.js"
     },
     {
+      "src": "/api/admin/leaderboard",
+      "dest": "/api/admin/leaderboard.js"
+    },
+    {
+      "src": "/api/leaderboard",
+      "dest": "/api/leaderboard.js"
+    },
+    {
+      "src": "/games",
+      "dest": "/public/games.html"
+    },
+    {
       "src": "/(.*)",
       "dest": "/public/$1"
     }
