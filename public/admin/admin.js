@@ -57,8 +57,6 @@ async function loadDashboardData() {
     try {
         const response = await fetch('/api/config');
         currentConfig = await response.json();
-        console.log('Loaded config:', currentConfig);
-        console.log('Links:', currentConfig.links);
         
         // Update dashboard
         document.getElementById('commissionDisplay').textContent = currentConfig.commissionsStatus || 'Open';
@@ -136,16 +134,20 @@ function displayLinks() {
             const linkItem = document.createElement('div');
             linkItem.className = 'link-item';
             
-            // Determine if icon is an image (base64) or emoji
-            const isImage = link.icon && link.icon.startsWith('data:image');
-            const iconHTML = isImage 
-                ? `<img src="${link.icon}" alt="icon" style="width:30px;height:30px;object-fit:contain;">`
-                : link.icon;
+            // Always expect image format for icons
+            const iconHTML = link.icon && link.icon.startsWith('data:image')
+                ? `<img src="${link.icon}" alt="icon" style="width:40px;height:40px;object-fit:contain;">`
+                : `<div style="width:40px;height:40px;background:#ccc;display:flex;align-items:center;justify-content:center;">No Icon</div>`;
             
             linkItem.innerHTML = `
                 <div class="link-info">
-                    <div class="link-name">${iconHTML} ${link.name}</div>
-                    <div class="link-url">${link.url}</div>
+                    <div style="display:flex;align-items:center;gap:10px;">
+                        ${iconHTML}
+                        <div>
+                            <div class="link-name">${link.name}</div>
+                            <div class="link-url">${link.url}</div>
+                        </div>
+                    </div>
                 </div>
                 <div class="link-actions">
                     <button class="btn-primary btn-edit" onclick="showEditLinkForm(${link.id})">Edit</button>
@@ -167,7 +169,7 @@ function cancelAddLink() {
     document.getElementById('linkName').value = '';
     document.getElementById('linkUrl').value = '';
     document.getElementById('linkIconFile').value = '';
-    document.getElementById('iconPreview').innerHTML = '';
+    document.getElementById('iconPreview').innerHTML = 'No image selected';
 }
 
 // Handle icon file upload preview
@@ -175,13 +177,29 @@ document.addEventListener('DOMContentLoaded', function() {
     const iconFileInput = document.getElementById('linkIconFile');
     const iconPreview = document.getElementById('iconPreview');
     
+    const editIconFileInput = document.getElementById('editLinkIconFile');
+    const editIconPreview = document.getElementById('editIconPreview');
+    
     if (iconFileInput) {
         iconFileInput.addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (file) {
                 const reader = new FileReader();
                 reader.onload = function(event) {
-                    iconPreview.innerHTML = `<img src="${event.target.result}" alt="icon preview">`;
+                    iconPreview.innerHTML = `<img src="${event.target.result}" alt="icon preview" style="width:100%;height:100%;object-fit:contain;">`;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+    
+    if (editIconFileInput) {
+        editIconFileInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    editIconPreview.innerHTML = `<img src="${event.target.result}" alt="icon preview" style="width:100%;height:100%;object-fit:contain;">`;
                 };
                 reader.readAsDataURL(file);
             }
@@ -204,11 +222,9 @@ async function saveNewLink() {
         return;
     }
 
-    let icon = '';
-    
     // Convert file to base64
     const file = iconFileInput.files[0];
-    icon = await new Promise((resolve) => {
+    const icon = await new Promise((resolve) => {
         const reader = new FileReader();
         reader.onload = (e) => resolve(e.target.result);
         reader.readAsDataURL(file);
@@ -245,6 +261,36 @@ async function saveNewLink() {
     } catch (error) {
         console.error('Error saving link:', error);
         alert('Failed to save link');
+    }
+}
+
+async function deleteLink(id) {
+    if (!confirm('Are you sure you want to delete this link?')) {
+        return;
+    }
+
+    currentConfig.links = currentConfig.links.filter(link => link.id !== id);
+
+    try {
+        const response = await fetch('/api/admin/links', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                password: adminPassword,
+                links: currentConfig.links
+            })
+        });
+
+        const data = await response.json();
+        if (data.success) {
+            displayLinks();
+            document.getElementById('linkCount').textContent = currentConfig.links.length;
+        }
+    } catch (error) {
+        console.error('Error deleting link:', error);
+        alert('Failed to delete link');
     }
 }
 
@@ -328,36 +374,6 @@ async function saveEditLink() {
     } catch (error) {
         console.error('Error updating link:', error);
         alert('Failed to update link');
-    }
-}
-
-async function deleteLink(id) {
-    if (!confirm('Are you sure you want to delete this link?')) {
-        return;
-    }
-
-    currentConfig.links = currentConfig.links.filter(link => link.id !== id);
-
-    try {
-        const response = await fetch('/api/admin/links', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                password: adminPassword,
-                links: currentConfig.links
-            })
-        });
-
-        const data = await response.json();
-        if (data.success) {
-            displayLinks();
-            document.getElementById('linkCount').textContent = currentConfig.links.length;
-        }
-    } catch (error) {
-        console.error('Error deleting link:', error);
-        alert('Failed to delete link');
     }
 }
 
@@ -597,8 +613,17 @@ function switchTab(tabName) {
         tabElement.classList.add('active');
     }
     
-    // Mark menu item as active
-    event.target.classList.add('active');
+    // Mark menu item as active - find the button that was clicked
+    const buttons = document.querySelectorAll('.menu-item');
+    buttons.forEach(btn => {
+        if (btn.textContent.toLowerCase().includes(tabName.toLowerCase()) || 
+            (tabName === 'dashboard' && btn.textContent.includes('Dashboard')) ||
+            (tabName === 'links' && btn.textContent.includes('Links')) ||
+            (tabName === 'contacts' && btn.textContent.includes('Contacts')) ||
+            (tabName === 'settings' && btn.textContent.includes('Settings'))) {
+            btn.classList.add('active');
+        }
+    });
     
     // Update page title
     const titles = {

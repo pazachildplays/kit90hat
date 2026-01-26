@@ -613,8 +613,17 @@ function switchTab(tabName) {
         tabElement.classList.add('active');
     }
     
-    // Mark menu item as active
-    event.target.classList.add('active');
+    // Mark menu item as active - find the button that was clicked
+    const buttons = document.querySelectorAll('.menu-item');
+    buttons.forEach(btn => {
+        if (btn.textContent.toLowerCase().includes(tabName.toLowerCase()) || 
+            (tabName === 'dashboard' && btn.textContent.includes('Dashboard')) ||
+            (tabName === 'links' && btn.textContent.includes('Links')) ||
+            (tabName === 'contacts' && btn.textContent.includes('Contacts')) ||
+            (tabName === 'settings' && btn.textContent.includes('Settings'))) {
+            btn.classList.add('active');
+        }
+    });
     
     // Update page title
     const titles = {

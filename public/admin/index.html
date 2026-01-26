@@ -13,7 +13,7 @@
             <h2>Admin Login</h2>
             <p>Enter password to access admin panel</p>
             <input type="password" id="passwordInput" placeholder="Password" onkeypress="handleLoginKeyPress(event)">
-            <button onclick="adminLogin()">Login</button>
+            <button type="button" onclick="adminLogin()">Login</button>
             <p id="loginError" class="error"></p>
         </div>
     </div>
@@ -77,7 +77,7 @@
             <div id="links-tab" class="tab-content hidden">
                 <div class="tab-header">
                     <h3>Manage Links</h3>
-                    <button class="add-btn" onclick="showAddLinkForm()">+ Add New Link</button>
+                    <button type="button" class="add-btn" onclick="showAddLinkForm()">+ Add New Link</button>
                 </div>
 
                 <div id="links-list" class="links-list">
@@ -90,12 +90,12 @@
                     <input type="text" id="linkUrl" placeholder="URL (e.g., https://...)" class="form-input">
                     <div class="icon-upload-section">
                         <label>Upload Icon Image:</label>
-                        <input type="file" id="linkIconFile" accept="image/*" class="form-input">
-                        <div id="iconPreview" class="icon-preview"></div>
+                        <input type="file" id="linkIconFile" accept="image/*" class="form-input" required>
+                        <div id="iconPreview" class="icon-preview">No image selected</div>
                     </div>
                     <div class="form-buttons">
-                        <button onclick="saveNewLink()" class="btn-primary">Save Link</button>
-                        <button onclick="cancelAddLink()" class="btn-secondary">Cancel</button>
+                        <button type="button" onclick="saveNewLink()" class="btn-primary">Save Link</button>
+                        <button type="button" onclick="cancelAddLink()" class="btn-secondary">Cancel</button>
                     </div>
                 </div>
 
@@ -109,8 +109,8 @@
                         <div id="editIconPreview" class="icon-preview"></div>
                     </div>
                     <div class="form-buttons">
-                        <button onclick="saveEditLink()" class="btn-primary">Save Changes</button>
-                        <button onclick="cancelEditLink()" class="btn-secondary">Cancel</button>
+                        <button type="button" onclick="saveEditLink()" class="btn-primary">Save Changes</button>
+                        <button type="button" onclick="cancelEditLink()" class="btn-secondary">Cancel</button>
                     </div>
                 </div>
             </div>
@@ -122,7 +122,7 @@
                 <div class="settings-section">
                     <label>Page Title:</label>
                     <input type="text" id="settingTitle" class="form-input" placeholder="Welcome to KitKat Universe">
-                    <button onclick="saveSetting('title', document.getElementById('settingTitle').value)" class="btn-primary">Save</button>
+                    <button type="button" onclick="saveSetting('title', document.getElementById('settingTitle').value)" class="btn-primary">Save</button>
                 </div>
 
                 <div class="settings-section">
@@ -132,14 +132,14 @@
                         <option value="Closed">Closed</option>
                         <option value="On Hold">On Hold</option>
                     </select>
-                    <button onclick="saveSetting('commissionsStatus', document.getElementById('commissionStatus').value)" class="btn-primary">Save</button>
+                    <button type="button" onclick="saveSetting('commissionsStatus', document.getElementById('commissionStatus').value)" class="btn-primary">Save</button>
                 </div>
 
                 <div class="color-settings-grid">
                     <div class="settings-section">
                         <label>Background Gradient:</label>
                         <input type="text" id="bgGradient" class="form-input" placeholder="linear-gradient(135deg, #5b7cfa 0%, #d946ef 100%)">
-                        <button onclick="saveSetting('bgGradient', document.getElementById('bgGradient').value)" class="btn-primary">Save</button>
+                        <button type="button" onclick="saveSetting('bgGradient', document.getElementById('bgGradient').value)" class="btn-primary">Save</button>
                     </div>
 
                     <div class="settings-section">
@@ -148,7 +148,7 @@
                             <input type="text" id="primaryColor" class="form-input" placeholder="#7c3aed" maxlength="7">
                             <input type="color" id="primaryColorPicker" class="color-picker">
                         </div>
-                        <button onclick="saveSetting('primaryColor', document.getElementById('primaryColor').value)" class="btn-primary">Save</button>
+                        <button type="button" onclick="saveSetting('primaryColor', document.getElementById('primaryColor').value)" class="btn-primary">Save</button>
                     </div>
 
                     <div class="settings-section">
@@ -157,7 +157,7 @@
                             <input type="text" id="secondaryColor" class="form-input" placeholder="#d946ef" maxlength="7">
                             <input type="color" id="secondaryColorPicker" class="color-picker">
                         </div>
-                        <button onclick="saveSetting('secondaryColor', document.getElementById('secondaryColor').value)" class="btn-primary">Save</button>
+                        <button type="button" onclick="saveSetting('secondaryColor', document.getElementById('secondaryColor').value)" class="btn-primary">Save</button>
                     </div>
 
                     <div class="settings-section">
@@ -166,7 +166,7 @@
                             <input type="text" id="footerColor" class="form-input" placeholder="#1a1a1a" maxlength="7">
                             <input type="color" id="footerColorPicker" class="color-picker">
                         </div>
-                        <button onclick="saveSetting('footerColor', document.getElementById('footerColor').value)" class="btn-primary">Save</button>
+                        <button type="button" onclick="saveSetting('footerColor', document.getElementById('footerColor').value)" class="btn-primary">Save</button>
                     </div>
 
                     <div class="settings-section">
@@ -175,7 +175,7 @@
                             <input type="text" id="textColor" class="form-input" placeholder="#ffffff" maxlength="7">
                             <input type="color" id="textColorPicker" class="color-picker">
                         </div>
-                        <button onclick="saveSetting('textColor', document.getElementById('textColor').value)" class="btn-primary">Save</button>
+                        <button type="button" onclick="saveSetting('textColor', document.getElementById('textColor').value)" class="btn-primary">Save</button>
                     </div>
                 </div>
             </div>
@@ -184,7 +184,7 @@
             <div id="contacts-tab" class="tab-content hidden">
                 <div class="tab-header">
                     <h3>Contact Information</h3>
-                    <button class="add-btn" onclick="showAddContactForm()">+ Add Contact</button>
+                    <button type="button" class="add-btn" onclick="showAddContactForm()">+ Add Contact</button>
                 </div>
 
                 <div id="contacts-list" class="contacts-list">
@@ -197,8 +197,8 @@
                     <input type="text" id="contactValue" placeholder="Value (e.g., contact@example.com)" class="form-input">
                     <input type="text" id="contactIcon" placeholder="Icon (emoji or text)" class="form-input" value="📧">
                     <div class="form-buttons">
-                        <button onclick="saveNewContact()" class="btn-primary">Save Contact</button>
-                        <button onclick="cancelAddContact()" class="btn-secondary">Cancel</button>
+                        <button type="button" onclick="saveNewContact()" class="btn-primary">Save Contact</button>
+                        <button type="button" onclick="cancelAddContact()" class="btn-secondary">Cancel</button>
                     </div>
                 </div>
 
@@ -208,8 +208,8 @@
                     <input type="text" id="editContactValue" placeholder="Value (e.g., contact@example.com)" class="form-input">
                     <input type="text" id="editContactIcon" placeholder="Icon (emoji or text)" class="form-input" value="📧">
                     <div class="form-buttons">
-                        <button onclick="saveEditContact()" class="btn-primary">Save Changes</button>
-                        <button onclick="cancelEditContact()" class="btn-secondary">Cancel</button>
+                        <button type="button" onclick="saveEditContact()" class="btn-primary">Save Changes</button>
+                        <button type="button" onclick="cancelEditContact()" class="btn-secondary">Cancel</button>
                     </div>
                 </div>
             </div>
