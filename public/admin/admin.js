@@ -218,36 +218,53 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 async function saveNewLink() {
-    console.log('saveNewLink called');
-    const name = document.getElementById('linkName').value;
-    const url = document.getElementById('linkUrl').value;
+    console.log('=== SAVE NEW LINK CALLED ===');
+    console.log('adminPassword:', adminPassword);
+    
+    const nameInput = document.getElementById('linkName');
+    const urlInput = document.getElementById('linkUrl');
     const iconFileInput = document.getElementById('linkIconFile');
-
-    console.log('Name:', name, 'URL:', url, 'Has file:', iconFileInput.files.length > 0, 'Password set:', !!adminPassword);
+    
+    const name = nameInput ? nameInput.value : '';
+    const url = urlInput ? urlInput.value : '';
+    
+    console.log('Form values - Name:', name, 'URL:', url, 'File:', iconFileInput?.files.length);
 
     if (!name || !url) {
-        alert('Please fill in all fields');
+        alert('❌ Please fill in all fields (name and URL)');
         return;
     }
 
-    if (iconFileInput.files.length === 0) {
-        alert('Please upload an icon image');
+    if (!iconFileInput || iconFileInput.files.length === 0) {
+        alert('❌ Please upload an icon image');
         return;
     }
 
     if (!adminPassword) {
-        alert('You must be logged in to save links');
+        alert('❌ You must be logged in to save links');
         return;
     }
 
     try {
+        console.log('Converting file to base64...');
         // Convert file to base64
         const file = iconFileInput.files[0];
+        console.log('File:', file.name, file.size, file.type);
+        
         const icon = await new Promise((resolve) => {
             const reader = new FileReader();
             reader.onload = (e) => resolve(e.target.result);
+            reader.onerror = (e) => {
+                console.error('FileReader error:', e);
+                resolve(null);
+            };
             reader.readAsDataURL(file);
         });
+
+        if (!icon) {
+            alert('❌ Failed to read icon file');
+            return;
+        }
 
         const newLink = {
             id: Date.now(),
@@ -259,7 +276,10 @@ async function saveNewLink() {
         currentConfig.links = currentConfig.links || [];
         currentConfig.links.push(newLink);
 
-        console.log('Sending links to API:', currentConfig.links.length, 'links');
+        console.log('Sending to API:', {
+            password: adminPassword,
+            linksCount: currentConfig.links.length
+        });
 
         const response = await fetch('/api/admin/links', {
             method: 'POST',
@@ -277,18 +297,21 @@ async function saveNewLink() {
         console.log('Response data:', data);
 
         if (data.success) {
-            alert('✓ Link saved successfully!');
+            alert('✅ Link saved successfully!');
             cancelAddLink();
             displayLinks();
             document.getElementById('linkCount').textContent = currentConfig.links.length;
         } else {
-            alert('Error: ' + (data.message || 'Failed to save link'));
+            alert('❌ Error: ' + (data.message || data.error || 'Failed to save link'));
             currentConfig.links.pop(); // Remove the link we just added
+            console.error('API returned error:', data);
         }
     } catch (error) {
-        console.error('Error saving link:', error);
-        alert('Failed to save link: ' + error.message);
-        currentConfig.links.pop(); // Remove the link we just added
+        console.error('Exception saving link:', error);
+        alert('❌ Failed to save link: ' + error.message);
+        if (currentConfig.links.length > 0) {
+            currentConfig.links.pop(); // Remove the link we just added
+        }
     }
 }
 
@@ -687,7 +710,13 @@ function openPreview() {
 }
 
 // Load dashboard on page load
-loadDashboardData();
+if (adminPassword) {
+    loadDashboardData();
+}
 
 // Poll for config updates from other admin sessions
-setInterval(loadDashboardData, 5000);
+setInterval(() => {
+    if (adminPassword) {
+        loadDashboardData();
+    }
+}, 5000);
