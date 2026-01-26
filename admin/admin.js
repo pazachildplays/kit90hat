@@ -169,7 +169,9 @@ function cancelAddLink() {
     document.getElementById('linkName').value = '';
     document.getElementById('linkUrl').value = '';
     document.getElementById('linkIconFile').value = '';
-    document.getElementById('iconPreview').innerHTML = 'No image selected';
+    const iconPreview = document.getElementById('iconPreview');
+    iconPreview.innerHTML = 'No image selected';
+    iconPreview.style.display = 'flex';
 }
 
 // Handle icon file upload preview
@@ -187,8 +189,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 const reader = new FileReader();
                 reader.onload = function(event) {
                     iconPreview.innerHTML = `<img src="${event.target.result}" alt="icon preview" style="width:100%;height:100%;object-fit:contain;">`;
+                    iconPreview.style.display = 'flex';
                 };
                 reader.readAsDataURL(file);
+            } else {
+                iconPreview.innerHTML = 'No image selected';
+                iconPreview.style.display = 'flex';
             }
         });
     }
@@ -200,8 +206,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 const reader = new FileReader();
                 reader.onload = function(event) {
                     editIconPreview.innerHTML = `<img src="${event.target.result}" alt="icon preview" style="width:100%;height:100%;object-fit:contain;">`;
+                    editIconPreview.style.display = 'flex';
                 };
                 reader.readAsDataURL(file);
+            } else {
+                editIconPreview.innerHTML = 'No image selected';
+                editIconPreview.style.display = 'flex';
             }
         });
     }
@@ -322,7 +332,9 @@ function cancelEditLink() {
     document.getElementById('editLinkName').value = '';
     document.getElementById('editLinkUrl').value = '';
     document.getElementById('editLinkIconFile').value = '';
-    document.getElementById('editIconPreview').innerHTML = '';
+    const editIconPreview = document.getElementById('editIconPreview');
+    editIconPreview.innerHTML = '';
+    editIconPreview.style.display = 'none';
     currentEditingLinkId = null;
 }
 
