@@ -221,21 +221,28 @@ async function saveNewLink() {
     console.log('=== SAVE NEW LINK CALLED ===');
     console.log('adminPassword:', adminPassword);
     
+    // Ensure form elements exist
     const nameInput = document.getElementById('linkName');
     const urlInput = document.getElementById('linkUrl');
     const iconFileInput = document.getElementById('linkIconFile');
     
-    const name = nameInput ? nameInput.value : '';
+    if (!nameInput) {
+        alert('❌ Form not loaded yet. Please try again.');
+        console.error('linkName element not found');
+        return;
+    }
+    
+    const name = nameInput.value || '';
     const url = urlInput ? urlInput.value : '';
     
-    console.log('Form values - Name:', name, 'URL:', url, 'File:', iconFileInput?.files.length);
+    console.log('Form values - Name:', name, 'URL:', url, 'File:', iconFileInput?.files?.length);
 
     if (!name || !url) {
         alert('❌ Please fill in all fields (name and URL)');
         return;
     }
 
-    if (!iconFileInput || iconFileInput.files.length === 0) {
+    if (!iconFileInput || !iconFileInput.files || iconFileInput.files.length === 0) {
         alert('❌ Please upload an icon image');
         return;
     }
@@ -320,8 +327,18 @@ async function deleteLink(id) {
         return;
     }
 
+    if (!adminPassword) {
+        alert('❌ You must be logged in to delete links');
+        return;
+    }
+
     console.log('Deleting link with ID:', id);
     const deletedLink = currentConfig.links.find(link => link.id === id);
+    if (!deletedLink) {
+        alert('❌ Link not found');
+        return;
+    }
+    
     currentConfig.links = currentConfig.links.filter(link => link.id !== id);
 
     try {
@@ -338,16 +355,17 @@ async function deleteLink(id) {
 
         const data = await response.json();
         if (data.success) {
-            alert('✓ Link deleted successfully!');
+            alert('✅ Link deleted successfully!');
             displayLinks();
             document.getElementById('linkCount').textContent = currentConfig.links.length;
         } else {
-            alert('Error: ' + (data.message || 'Failed to delete link'));
+            alert('❌ Error: ' + (data.message || 'Failed to delete link'));
             currentConfig.links.push(deletedLink); // Restore the link
+            console.error('API error:', data);
         }
     } catch (error) {
         console.error('Error deleting link:', error);
-        alert('Failed to delete link: ' + error.message);
+        alert('❌ Failed to delete link: ' + error.message);
         currentConfig.links.push(deletedLink); // Restore the link
     }
 }
@@ -388,18 +406,34 @@ function cancelEditLink() {
 
 async function saveEditLink() {
     console.log('saveEditLink called');
-    const name = document.getElementById('editLinkName').value;
-    const url = document.getElementById('editLinkUrl').value;
+    
+    // Get elements with null checks
+    const nameInput = document.getElementById('editLinkName');
+    const urlInput = document.getElementById('editLinkUrl');
     const iconFileInput = document.getElementById('editLinkIconFile');
+    
+    if (!nameInput || !urlInput) {
+        alert('❌ Form not loaded yet. Please try again.');
+        console.error('Form elements not found');
+        return;
+    }
+    
+    const name = nameInput.value || '';
+    const url = urlInput.value || '';
 
     if (!name || !url) {
-        alert('Please fill in all fields');
+        alert('❌ Please fill in all fields');
         return;
     }
 
     const linkIndex = currentConfig.links.findIndex(l => l.id === currentEditingLinkId);
     if (linkIndex === -1) {
-        alert('Link not found');
+        alert('❌ Link not found');
+        return;
+    }
+
+    if (!adminPassword) {
+        alert('❌ You must be logged in to edit links');
         return;
     }
 
@@ -409,14 +443,20 @@ async function saveEditLink() {
         currentConfig.links[linkIndex].url = url;
 
         // Update icon if a new file was uploaded
-        if (iconFileInput.files.length > 0) {
+        if (iconFileInput && iconFileInput.files && iconFileInput.files.length > 0) {
             const file = iconFileInput.files[0];
             const newIcon = await new Promise((resolve) => {
                 const reader = new FileReader();
                 reader.onload = (e) => resolve(e.target.result);
+                reader.onerror = (e) => {
+                    console.error('FileReader error:', e);
+                    resolve(null);
+                };
                 reader.readAsDataURL(file);
             });
-            currentConfig.links[linkIndex].icon = newIcon;
+            if (newIcon) {
+                currentConfig.links[linkIndex].icon = newIcon;
+            }
         }
 
         console.log('Sending updated link to API');
@@ -434,15 +474,16 @@ async function saveEditLink() {
 
         const data = await response.json();
         if (data.success) {
-            alert('✓ Link updated successfully!');
+            alert('✅ Link updated successfully!');
             cancelEditLink();
             displayLinks();
         } else {
-            alert('Error: ' + (data.message || 'Failed to update link'));
+            alert('❌ Error: ' + (data.message || 'Failed to update link'));
+            console.error('API error:', data);
         }
     } catch (error) {
         console.error('Error updating link:', error);
-        alert('Failed to update link: ' + error.message);
+        alert('❌ Failed to update link: ' + error.message);
     }
 }
 
