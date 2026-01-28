@@ -14,34 +14,28 @@ const DEFAULT_CONFIG = {
   contacts: []
 };
 
-const configPath = path.join(process.cwd(), 'data', 'config.json');
-
 async function getConfig() {
   try {
-    // Try KV first (on Vercel)
+    // Try Redis on Vercel
     if (process.env.REDIS_URL) {
-      const config = await kv.get('kitkat:config');
-      if (config) {
-        return {
-          ...DEFAULT_CONFIG,
-          ...config,
-          links: config.links && config.links.length > 0 ? config.links : DEFAULT_CONFIG.links,
-          contacts: config.contacts && config.contacts.length > 0 ? config.contacts : DEFAULT_CONFIG.contacts
-        };
+      try {
+        const config = await kv.get('kitkat:config');
+        if (config) {
+          return { ...DEFAULT_CONFIG, ...config };
+        }
+      } catch (kvError) {
+        console.error('KV Error:', kvError);
       }
     }
     
-    // Fallback to local file (for local development)
+    // Fallback to file system
+    const configPath = path.join(process.cwd(), 'data', 'config.json');
     if (fs.existsSync(configPath)) {
       const data = fs.readFileSync(configPath, 'utf8');
-      const config = JSON.parse(data);
-      return {
-        ...DEFAULT_CONFIG,
-        ...config,
-        links: config.links && config.links.length > 0 ? config.links : DEFAULT_CONFIG.links,
-        contacts: config.contacts && config.contacts.length > 0 ? config.contacts : DEFAULT_CONFIG.contacts
-      };
+      const parsed = JSON.parse(data);
+      return { ...DEFAULT_CONFIG, ...parsed };
     }
+    
     return DEFAULT_CONFIG;
   } catch (error) {
     console.error('Error reading config:', error);
@@ -50,23 +44,26 @@ async function getConfig() {
 }
 
 module.exports = async (req, res) => {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-
-  if (req.method === 'OPTIONS') {
-    return res.status(200).json({ ok: true });
-  }
-
-  if (req.method !== 'GET') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
-
   try {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    res.setHeader('Content-Type', 'application/json');
+
+    if (req.method === 'OPTIONS') {
+      res.status(200).end();
+      return;
+    }
+
+    if (req.method !== 'GET') {
+      res.status(405).json({ error: 'Method not allowed' });
+      return;
+    }
+
     const config = await getConfig();
     res.status(200).json(config);
   } catch (error) {
-    console.error('Error:', error);
-    res.status(500).json({ error: 'Server error' });
+    console.error('API Error:', error);
+    res.status(500).json({ error: 'Server error', details: error.message });
   }
 };
